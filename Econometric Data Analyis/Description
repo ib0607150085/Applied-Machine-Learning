@@ -1,0 +1,95 @@
+Estimation of Nuisance Functions
+Most empirical economic studies are interested in a single low dimensional parameter, but determining that parameter may require estimating additional “nuisance” parameters to estimate this coefficient consistently and avoid omitted variables bias. However, the choice of which other variables to include and their functional forms is often somewhat arbitrary. One promising idea is to use machine learning methods to let the data decide what control variables to include and how. Care must be taken when doing so, though, because machine learning’s flexibility and complexity – what make it so good at prediction – also pose challenges for inference.
+
+Partially Linear Regression
+To be more concrete, consider a regression model. We have some regressor of interest, 
+, and we want to estimate the effect of 
+ on 
+. We have a rich enough set of controls 
+ that we are willing to believe that 
+ . 
+ and 
+ are scalars, while 
+ is a vector. We are not interested in 
+ per se, but we need to include it to avoid omitted variable bias. Suppose the true model generating the data is:
+
+where 
+ is some unknown function. This is called a partially linear model: linear in 
+, but not in 
+ .
+
+A typical applied econometric approach for this model would be to choose some transform of 
+, say 
+, where 
+ could be some subset of 
+ , perhaps along with interactions, powers, and so on. Then, we estimate a linear regression,
+
+and then perhaps also report results for a handful of different choices of 
+ .
+
+Some downsides to the typical applied econometric practice include:
+
+The choice of 
+ is arbitrary, which opens the door to specification searching and p-hacking.
+
+If 
+ is high dimensional and 
+ is low dimensional, a poor choice will lead to omitted variable bias. Even if 
+ is low dimensional, omitted variable bias occurs if 
+ is poorly approximated by 
+.
+
+In some sense, machine learning can be thought of as a way to choose 
+ in an automated and data-driven way. Choosing which machine learning method to use and tuning parameters specifically for that method are still potentially arbitrary decisions, but these decisions may have less impact.
+
+Economic researchers typically don’t just want an estimate of 
+, 
+. Instead, they want to know that 
+ has good statistical properties (it should at least be consistent), and they want some way to quantify how uncertain is 
+ (i.e. they want a standard error). The complexity of machine learning methods makes their statistical properties difficult to understand. If we want 
+ to have known and good statistical properties, we must make sure we use machine learning methods correctly. A procedure to estimate 
+ in the partially linear model is as follows:
+
+Predict 
+ and 
+ from 
+ using any machine learning method with “cross-fitting”.
+
+Partition the data in 
+ subsets.
+
+For the 
+ th subset, train models to predict 
+ and 
+ using the other 
+ subsets. Denote the predictions from these models as 
+ and 
+.
+
+For 
+ in the 
+ -th subset use the other 
+ subsets to predict 
+
+Partial out 
+ : let 
+ and 
+.
+
+Regress 
+ on 
+, let 
+ be the estimated coefficient for 
+ . 
+ is consistent, asymptotically normal, and has the usual standard error (i.e. the standard error given by statsmodels is correct).
+
+Some remarks:
+
+This procedure gives a 
+ that has the same asymptotic distribution as what we would get if we knew the true 
+ . In statistics, we call this an oracle property, because it is as if an all knowing oracle told us 
+.
+
+This procedure requires some technical conditions on the data-generating process and machine learning estimator, but we will not worry about them here. See [mlCCD+18] for details.
+
+Here is code implementing the above idea.
